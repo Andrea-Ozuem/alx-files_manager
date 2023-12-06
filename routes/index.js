@@ -1,7 +1,7 @@
-const express = require("express");
-const router = express.Router();
+const express = require('express');
+const AppController = require('../controllers/AppController');
 
-const AppController = require('../controllers/AppController.js');
+const router = express.Router();
 
 router.get('/status', AppController.getStatus);
 router.get('/stats', AppController.getStats);
