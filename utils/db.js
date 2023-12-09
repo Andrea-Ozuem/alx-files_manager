@@ -1,4 +1,4 @@
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
 class DBClient {
   constructor() {
@@ -22,6 +22,18 @@ class DBClient {
   async nbFiles() {
     const nb = await this.client.db().collection('files').countDocuments();
     return nb;
+  }
+
+  async findU(key, val) {
+    const collection = this.client.db().collection('users');
+    let user = null;
+    if (key === '_id') {
+      const id = new ObjectId(val);
+      user = await collection.findOne({ [key]: id });
+    } else {
+      user = await collection.findOne({ [key]: val });
+    }
+    return user;
   }
 }
 
