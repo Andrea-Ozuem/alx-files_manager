@@ -18,8 +18,8 @@ exports.postUpload = (async (req, res) => {
   const { isPublic } = req.body || false;
   const { parentId } = req.body || 0;
 
-  if (!name) return res.status(400).json({ error: 'Missing name' });
-  if (!type || !acceptedTypes.includes(type)) return res.status(400).json({ error: 'Missing type' });
+  if (!name) res.status(400).json({ error: 'Missing name' });
+  if (!type || !acceptedTypes.includes(type)) res.status(400).json({ error: 'Missing type' });
   if (!data && type !== 'folder') return res.status(400).json({ error: 'Missing data' });
 
   if (parentId) {
