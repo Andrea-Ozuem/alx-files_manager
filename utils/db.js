@@ -35,6 +35,11 @@ class DBClient {
     }
     return user;
   }
+  
+  async aggFiles(pipeline) {
+    const files = await this.client.db().collection('files').aggregate(pipeline).toArray();
+    return files
+  }
 
   async inserFile(userId, name, type, isPublic, parentId, localPath) {
     const coll = this.client.db().collection('files');

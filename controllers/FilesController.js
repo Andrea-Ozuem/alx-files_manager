@@ -1,4 +1,5 @@
 import { v4 } from 'uuid';
+import { ObjectID } from 'mongodb';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
@@ -18,13 +19,13 @@ exports.postUpload = (async (req, res) => {
 
   if (!name || !type || (!['folder', 'file', 'image'].includes(type)) || (!data && type !== 'folder')) {
     // eslint-disable-next-line no-nested-ternary
-    res.status(400).send(`error: ${!name ? 'Missing name' : (!type || (!['folder', 'file', 'image'].includes(type)))
+    return res.status(400).send(`error: ${!name ? 'Missing name' : (!type || (!['folder', 'file', 'image'].includes(type)))
       ? 'Missing type' : 'Missing data'}`).end();
   }
   if (parentId) {
     const folder = await dbClient.findU('files', '_id', parentId);
     if (!folder) res.status(400).send({ error: 'Parent not found' }).end();
-    if (folder.type !== 'folder') res.status(400).send({ error: 'Parent is not a folder' }).end();
+    if (folder.type !== 'folder') return res.status(400).send({ error: 'Parent is not a folder' }).end();
   }
 
   user = await dbClient.findU('users', '_id', user);
@@ -40,7 +41,7 @@ exports.postUpload = (async (req, res) => {
       type: opt.type,
       isPublic: opt.isPublic !== undefined ? opt.isPublic : false,
       parentId: opt.parentId !== undefined ? opt.parentId : 0,
-    }).end();
+    });
   }
   // else save file locally and in db
   const fpath = process.env.FOLDER_PATH && process.env.FOLDER_PATH.trim() !== ''
@@ -63,5 +64,48 @@ exports.postUpload = (async (req, res) => {
     type: opt.type,
     isPublic: opt.isPublic !== undefined ? opt.isPublic : false,
     parentId: opt.parentId !== undefined ? opt.parentId : 0,
-  }).end();
+  });
+});
+
+exports.getShow = (async (req, res) => {
+  const token = req.header('X-Token');
+  const userId = await redisClient.get(`auth_${token}`);
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  const user = await dbClient.findU('users', '_id', userId);
+  const { id } = req.params;
+
+  const coll = dbClient.client.db().collection('files');
+  const file = await coll.findOne({ _id: ObjectID(id), userId: user._id });
+  if (!file) return res.status(404).json({ error: 'Not found' });
+  return res.status(200).json({
+    id: file._id,
+    userId: file.userId,
+    name: file.name,
+    type: file.type,
+    isPublic: file.isPublic,
+    parentId: file.parentId,
+  });
+});
+
+exports.getIndex = (async (req, res) => {
+  const token = req.header('X-Token');
+  const userId = await redisClient.get(`auth_${token}`);
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  const user = await dbClient.findU('users', '_id', userId);
+  const { parentId = 0, page = 0 } = req.query;
+  const filesPerPage = 20;
+  const skip = filesPerPage * page;
+
+  const pipeline = [
+    { $match: { userId: user._id, parentId: parentId ? new ObjectID(parentId) : '0' } },
+    { $skip: skip },
+    { $limit: filesPerPage },
+  ];
+  const files = await dbClient.aggFiles(pipeline);
+  for (const file of files) {
+    file.id = file._id;
+    delete file._id;
+    delete file.localPath;
+  }
+  return res.status(200).json(files);
 });
