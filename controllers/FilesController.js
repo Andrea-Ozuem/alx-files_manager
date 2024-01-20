@@ -18,11 +18,10 @@ exports.postUpload = (async (req, res) => {
   const { isPublic } = req.body || false;
   const { parentId } = req.body || 0;
 
-  if (!name || !type || (!['folder', 'file', 'image'].includes(type)) || (!data && type !== 'folder')) {
-    // eslint-disable-next-line no-nested-ternary
-    return res.status(400).send(`error: ${!name ? 'Missing name' : (!type || (!['folder', 'file', 'image'].includes(type)))
-      ? 'Missing type' : 'Missing data'}`).end();
-  }
+  if (!name) return res.status(400).json({ error: 'Missing name' });
+  if (!type || !acceptedTypes.includes(type)) return res.status(400).json({ error: 'Missing type' });
+  if (!data && type !== 'folder') return res.status(400).json({ error: 'Missing data' });
+
   if (parentId) {
     const folder = await dbClient.findU('files', '_id', parentId);
     if (!folder) res.status(400).send({ error: 'Parent not found' }).end();
