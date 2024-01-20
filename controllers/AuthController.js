@@ -7,7 +7,7 @@ exports.getConnect = (async (req, res) => {
   try {
     const header = req.headers.authorization.split(' ')[1];
     const decoded = Buffer.from(header, 'base64').toString().split(':');
-    const user = await dbClient.findU('email', decoded[0]);
+    const user = await dbClient.findU('users', 'email', decoded[0]);
     const pwd = createHash('sha1').update(decoded[1]).digest('hex');
     if (!user || (user && user.password !== pwd)) {
       res.status(401).send({ error: 'Unauthorized' }).end();

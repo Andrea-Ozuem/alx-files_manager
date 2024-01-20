@@ -25,6 +25,6 @@ exports.getMe = (async (req, res) => {
   const token = req.headers['x-token'];
   const userSess = await redisClient.get(`auth_${token}`);
   if (!userSess) res.status(401).send({ error: 'Unauthorized' }).end();
-  const user = await dbClient.findU('_id', userSess);
+  const user = await dbClient.findU('users', '_id', userSess);
   res.send({ id: user._id, email: user.email });
 });

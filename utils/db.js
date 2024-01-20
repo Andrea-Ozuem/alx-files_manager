@@ -24,8 +24,8 @@ class DBClient {
     return nb;
   }
 
-  async findU(key, val) {
-    const collection = this.client.db().collection('users');
+  async findU(coll, key, val) {
+    const collection = this.client.db().collection(coll);
     let user = null;
     if (key === '_id') {
       const id = new ObjectId(val);
@@ -34,6 +34,26 @@ class DBClient {
       user = await collection.findOne({ [key]: val });
     }
     return user;
+  }
+
+  async inserFile(userId, name, type, isPublic, parentId, localPath) {
+    const coll = this.client.db().collection('files');
+    if (!localPath) {
+      const rec = await coll.insertOne({ userId: new ObjectId(userId),
+                                         name,
+                                         type,
+                                         isPublic: isPublic ? isPublic : false,
+                                         parentId: parentId ? new ObjectId(parentId) : '0' });
+      return rec;
+    } else {
+      const rec = await coll.insertOne({ userId: new ObjectId(userId),
+                                         name,
+                                         type,
+                                         isPublic: isPublic ? isPublic : false,
+                                         parentId: parentId ? new ObjectId(parentId) : '0',
+                                         localPath });
+      return rec;
+    }
   }
 }
 
