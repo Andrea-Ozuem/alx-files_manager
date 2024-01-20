@@ -19,8 +19,8 @@ exports.postUpload = (async (req, res) => {
   const { parentId } = req.body || 0;
   const acceptedTypes = ['folder', 'file', 'image'];
 
-  if (!name) res.status(400).json({ error: 'Missing name' });
-  if (!type || !acceptedTypes.includes(type)) res.status(400).json({ error: 'Missing type' });
+  if (!name) return res.status(400).json({ error: 'Missing name' });
+  if (!type || !acceptedTypes.includes(type)) return res.status(400).json({ error: 'Missing type' });
   if (!data && type !== 'folder') return res.status(400).json({ error: 'Missing data' });
 
   if (parentId) {
@@ -35,13 +35,16 @@ exports.postUpload = (async (req, res) => {
   if (type === 'folder') {
     const inserted = await dbClient.inserFile(user._id, name, type, isPublic, parentId, null);
     const opt = inserted.ops[0];
+    if (opt.parentId === '0') {
+      opt.parentId = 0;
+    }
     return res.status(201).json({
       id: opt._id,
       userId: opt.userId,
       name: opt.name,
       type: opt.type,
-      isPublic: opt.isPublic !== undefined ? opt.isPublic : false,
-      parentId: opt.parentId !== undefined ? opt.parentId : 0,
+      isPublic: opt.isPublic,
+      parentId: opt.parentId,
     });
   }
   // else save file locally and in db
@@ -58,13 +61,16 @@ exports.postUpload = (async (req, res) => {
   });
   const rec = await dbClient.inserFile(user._id, name, type, isPublic, parentId, filePath);
   const opt = rec.ops[0];
+  if (opt.parentId === '0') {
+    opt.parentId = 0;
+  }
   return res.status(201).json({
     id: opt._id,
     userId: opt.userId,
     name: opt.name,
     type: opt.type,
-    isPublic: opt.isPublic !== undefined ? opt.isPublic : false,
-    parentId: opt.parentId !== undefined ? opt.parentId : 0,
+    isPublic: opt.isPublic,
+    parentId: opt.parentId,
   });
 });
 
