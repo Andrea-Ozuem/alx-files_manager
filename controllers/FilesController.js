@@ -17,6 +17,7 @@ exports.postUpload = (async (req, res) => {
   const { name, type, data } = req.body;
   const { isPublic } = req.body || false;
   const { parentId } = req.body || 0;
+  const acceptedTypes = ['folder', 'file', 'image'];
 
   if (!name) res.status(400).json({ error: 'Missing name' });
   if (!type || !acceptedTypes.includes(type)) res.status(400).json({ error: 'Missing type' });
